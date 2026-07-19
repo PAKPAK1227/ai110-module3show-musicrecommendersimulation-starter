@@ -144,32 +144,31 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-Real output from `python -m src.main` for the default **pop / happy / energy 0.8** profile:
+`python -m src.main` now runs a **stress-test suite** across four profiles. Below is the
+first (**High-Energy Pop**); the full run for all four profiles — plus paired
+comparisons — lives in the [Evaluation section of the model card](model_card.md).
 
 ```
 Loaded songs: 18
 
-Top 5 recommendations for genre=pop, mood=happy, energy=0.8:
+=== High-Energy Pop ===
+prefs: genre=pop, mood=happy, energy=0.9, likes_acoustic=False
 
-1. Sunrise City — Neon Echo  [score: 4.47]
+1. Sunrise City — Neon Echo  [score: 4.38]
    genre=pop, mood=happy, energy=0.82
-   reasons: genre match (+2.0); mood match (+1.0); energy closeness (+1.47)
-
-2. Gym Hero — Max Pulse  [score: 3.30]
+   reasons: genre match (+2.0); mood match (+1.0); energy closeness (+1.38)
+2. Gym Hero — Max Pulse  [score: 3.46]
    genre=pop, mood=intense, energy=0.93
-   reasons: genre match (+2.0); energy closeness (+1.30)
-
-3. Rooftop Lights — Indigo Parade  [score: 2.44]
+   reasons: genre match (+2.0); energy closeness (+1.46)
+3. Rooftop Lights — Indigo Parade  [score: 2.29]
    genre=indie pop, mood=happy, energy=0.76
-   reasons: mood match (+1.0); energy closeness (+1.44)
-
-4. Concrete Kingdom — Byte Marshal  [score: 1.50]
-   genre=hip-hop, mood=intense, energy=0.8
-   reasons: energy closeness (+1.50)
-
-5. Night Drive Loop — Neon Echo  [score: 1.42]
-   genre=synthwave, mood=moody, energy=0.75
-   reasons: energy closeness (+1.42)
+   reasons: mood match (+1.0); energy closeness (+1.29)
+4. Storm Runner — Voltline  [score: 1.48]
+   genre=rock, mood=intense, energy=0.91
+   reasons: energy closeness (+1.48)
+5. Neon Overdrive — Pulse Cartel  [score: 1.43]
+   genre=edm, mood=energetic, energy=0.95
+   reasons: energy closeness (+1.43)
 ```
 
 The top pick (*Sunrise City*) is the only song matching genre **and** mood **and** near-target energy, so it wins clearly — exactly what we'd expect.
