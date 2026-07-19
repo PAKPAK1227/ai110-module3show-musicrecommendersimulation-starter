@@ -2,60 +2,76 @@
 
 ## 1. Model Name  
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
+**VibeScope 1.0** — it scopes out the "vibe" of a song and matches it to your taste.
 
 ---
 
 ## 2. Intended Use  
 
-Describe what your recommender is designed to do and who it is for. 
+**Goal / task.** VibeScope tries to guess which songs a person will like. You give it a
+few preferences (favorite genre, favorite mood, target energy, whether you like acoustic
+music). It scores every song in the catalog and hands back the top few.
 
-Prompts:  
+**Who it's for.** This is a classroom project for learning how recommenders work. It is
+**not** for real listeners or a real music app.
 
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**What it assumes.** It assumes you can describe your taste with one genre, one mood, and
+one energy level. Real taste is messier than that.
+
+**Intended use:** learning, experimenting with scoring rules, and comparing how different
+user profiles get different lists.
+
+**Non-intended use:** do not use it to make real recommendations, to judge someone's
+taste, or in any product. The catalog is tiny and the rules are simple, so its picks are
+demonstrations, not real advice.
 
 ---
 
 ## 3. How the Model Works  
 
-Explain your scoring approach in simple language.  
+Think of it like a points contest. Each song starts with zero points and earns points for
+matching what you asked for:
 
-Prompts:  
+- **Same genre as your favorite:** +2 points. Genre matters most.
+- **Same mood as your favorite:** +1 point.
+- **Energy close to your target:** up to +1.5 points. The closer the song's energy is to
+  what you want, the more points it gets. A song that is way too loud or way too quiet
+  gets almost nothing here.
+- **Acoustic bonus:** +0.5 points if you like acoustic music and the song is very acoustic.
 
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
+Add up the points for every song, then sort them from highest to lowest. The top 5 are your
+recommendations. Each pick also comes with a plain reason like "genre match (+2.0)" so you
+can see why it was chosen.
 
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+**Change from the starter code:** the starter just returned the first few songs. I added the
+real scoring rules, the "closeness" idea for energy, the reasons list, and ranking.
 
 ---
 
 ## 4. Data  
 
-Describe the dataset the model uses.  
-
-Prompts:  
-
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+- **Size:** 18 songs (I expanded the starter 10 to 18).
+- **Features per song:** title, artist, genre, mood, energy, tempo, valence, danceability,
+  and acousticness. The scoring uses genre, mood, energy, and acousticness.
+- **Genres:** pop, lofi, rock, ambient, jazz, synthwave, indie pop, hip-hop, edm, classical,
+  metal, reggae, r&b, country, and funk.
+- **Moods:** happy, chill, intense, relaxed, moody, focused, energetic, melancholy,
+  aggressive, romantic, nostalgic, and dreamy.
+- **What's missing:** it's still a small, made-up catalog. There are no lyrics, no language,
+  no artist popularity, and no listening history. Whole styles of music are represented by
+  just one song each, so the data can't capture how varied real taste is.
 
 ---
 
 ## 5. Strengths  
 
-Where does your system seem to work well  
-
-Prompts:  
-
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+- It works great for **clear, non-conflicting tastes.** Ask for "chill lofi" and you get a
+  tight, sensible list of quiet study music.
+- **Opposite users get opposite lists.** The pop fan and the lofi fan share almost no songs,
+  which is exactly right.
+- Every pick comes with a **reason**, so the recommendations are easy to explain and trust.
+- The **energy "closeness" rule** correctly avoids handing a calm listener a loud gym track,
+  which matched my intuition in testing.
 
 ---
 
@@ -168,23 +184,38 @@ apart rather than surfacing better picks.
 
 ## 8. Future Work  
 
-Ideas for how you would improve the model next.  
+If I kept building VibeScope, I would:
 
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+1. **Balance mood against energy.** Right now energy can quietly overrule mood. I'd score
+   mood on a sliding scale too, or let the user say what matters most to them.
+2. **Use more features.** Bring in valence, tempo, and danceability so the model understands
+   emotional tone, not just loudness.
+3. **Add variety to the top results.** Nudge the list so the same loud song doesn't crowd out
+   everything else, and allow partial genre matches (like "indie pop" counting for a pop fan).
 
 ---
 
 ## 9. Personal Reflection  
 
-A few sentences about your experience.  
+**Biggest learning moment.** My biggest "aha" was watching the adversarial profile break the
+system. When I asked for a *sad but high-energy* song, the only truly sad track landed dead
+last. That taught me that a recommender is really just a pile of weights, and whichever
+weight is biggest quietly decides everything. The math doesn't "understand" music at all.
 
-Prompts:  
+**How AI tools helped, and where I double-checked.** The AI helped me scaffold the CSV
+loader, the scoring function, and the ranking quickly, and it explained ideas like the
+`.sort()` vs `sorted()` difference and why energy should reward *closeness* instead of
+higher values. I still had to double-check things myself: the CLI import was wrong for
+`python -m src.main`, the user-preference dictionary keys had to actually match what the code
+read, and I had to run every profile and read the real output to confirm the rankings made
+sense rather than trusting they would.
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+**What surprised me.** I was surprised that such simple rules — add a few points, sort the
+list — can *feel* like real recommendations. There's no machine learning here, just weighted
+matching, yet the lists look thoughtful. It made me realize how much of a "smart" app can be
+plain arithmetic, and also how easily those simple choices hide biases, like over-trusting
+genre or loudness.
+
+**What I'd try next.** I'd fix the mood-vs-energy imbalance, add the unused audio features,
+and test on a much bigger catalog so one or two extra pop songs can't make pop look
+dominant.
