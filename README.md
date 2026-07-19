@@ -17,17 +17,93 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+Real streaming platforms like Spotify and YouTube predict what you'll love next
+by blending two ideas. **Collaborative filtering** looks at *other users'*
+behavior — "people whose taste matches yours also liked this" — while
+**content-based filtering** looks at the *song's own attributes* — "this sounds
+like what you already enjoy." They feed on data such as likes, skips, replays,
+playlist adds, and audio traits like tempo, energy, and mood. Collaborative
+filtering finds surprising cross-genre gems but struggles with brand-new songs
+(the *cold-start* problem); content-based filtering works instantly for any song
+with known attributes but tends to keep recommending more of the same.
 
-Some prompts to answer:
+**My version is a pure content-based recommender.** It has song attributes but no
+crowd of users to learn from, so it prioritizes matching each song's *vibe* to a
+user's stated taste. It rewards songs that share the user's favorite **genre** and
+**mood**, and whose **energy** is *closest* to the user's target — closeness, not
+just a higher number, is what earns points, so a mellow-focus user isn't handed a
+high-energy gym track. Genre is weighted highest because it's the most stable
+signal of taste; mood and energy refine the match.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+**How a score is computed (Scoring Rule → one song):**
 
-You can include a simple diagram or bullet list if helpful.
+```
+total = 2.0 · (genre match)      +   # strongest, most stable taste signal
+        1.0 · (mood match)       +
+        1.5 · (1 - |energy - target_energy|)  +   # rewards closeness, 0–1 scale
+        0.5 · (acoustic bonus if user likes acoustic and acousticness > 0.6)
+```
+
+**How songs are chosen (Ranking Rule → list of songs):** every song is scored,
+then the list is **sorted by score (highest first)** and the **top _k_** (default 5)
+are returned. Scoring judges each song alone; ranking compares and selects across
+all of them — you need both.
+
+### Features used in the simulation
+
+**`Song`** (from `data/songs.csv`):
+`id`, `title`, `artist`, `genre`, `mood`, `energy`, `tempo_bpm`, `valence`,
+`danceability`, `acousticness`.
+The scoring core uses **`genre`**, **`mood`**, **`energy`**, and **`acousticness`**.
+
+**`UserProfile`** (the taste profile):
+`favorite_genre`, `favorite_mood`, `target_energy`, `likes_acoustic`.
+
+Example profile the recommender compares against:
+
+```python
+user_prefs = {
+    "favorite_genre": "lofi",
+    "favorite_mood": "chill",
+    "target_energy": 0.35,
+    "likes_acoustic": True,
+}
+```
+
+### Data flow
+
+```
+INPUT (user_prefs)  →  PROCESS (score every song in songs.csv)  →  OUTPUT (rank → top-K)
+```
+
+For each of the 18 songs in the catalog: score it against `user_prefs`, collect the
+scores, sort highest-first, and return the top _k_ (default 5).
+
+### Finalized Algorithm Recipe
+
+| Rule | Condition | Points |
+|------|-----------|--------|
+| Genre match | `song.genre == favorite_genre` | **+2.0** |
+| Mood match | `song.mood == favorite_mood` | **+1.0** |
+| Energy closeness | `1 - abs(song.energy - target_energy)` | **× 1.5** (0 → 1.5) |
+| Acoustic bonus | `likes_acoustic and song.acousticness > 0.6` | **+0.5** |
+
+A genre match is worth double a mood match because genre is the most stable signal
+of taste. Energy is scored by *closeness* (proximity to the target), never by
+"higher is better."
+
+### Potential biases I expect
+
+- **Genre over-prioritization / filter bubble.** Because genre is worth 2.0 and
+  requires an *exact* string match, a great song in a *different* genre that
+  perfectly matches the user's mood and energy can never earn those points. The
+  system will keep recommending the same genre and hide worthy neighbors (e.g. an
+  `ambient/chill` track for a `lofi/chill` fan).
+- **Exact-match brittleness.** `"indie pop"` ≠ `"pop"` and casing matters, so near-
+  miss genres/moods score as total mismatches.
+- **Catalog & feature bias.** With only 18 hand-written songs, popular genres are
+  over-represented; and the recipe ignores `valence`, `tempo_bpm`, and
+  `danceability`, so mood nuance those features capture is lost.
 
 ---
 
@@ -68,16 +144,35 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-Paste a sample of your recommender's output here as a text block so a reader can see what it produces:
+Real output from `python -m src.main` for the default **pop / happy / energy 0.8** profile:
 
 ```
-# e.g.:
-# User profile: genre=indie, mood=chill, energy=low
-# Recommendations:
-#   1. ...
-#   2. ...
-#   3. ...
+Loaded songs: 18
+
+Top 5 recommendations for genre=pop, mood=happy, energy=0.8:
+
+1. Sunrise City — Neon Echo  [score: 4.47]
+   genre=pop, mood=happy, energy=0.82
+   reasons: genre match (+2.0); mood match (+1.0); energy closeness (+1.47)
+
+2. Gym Hero — Max Pulse  [score: 3.30]
+   genre=pop, mood=intense, energy=0.93
+   reasons: genre match (+2.0); energy closeness (+1.30)
+
+3. Rooftop Lights — Indigo Parade  [score: 2.44]
+   genre=indie pop, mood=happy, energy=0.76
+   reasons: mood match (+1.0); energy closeness (+1.44)
+
+4. Concrete Kingdom — Byte Marshal  [score: 1.50]
+   genre=hip-hop, mood=intense, energy=0.8
+   reasons: energy closeness (+1.50)
+
+5. Night Drive Loop — Neon Echo  [score: 1.42]
+   genre=synthwave, mood=moody, energy=0.75
+   reasons: energy closeness (+1.42)
 ```
+
+The top pick (*Sunrise City*) is the only song matching genre **and** mood **and** near-target energy, so it wins clearly — exactly what we'd expect.
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
 
